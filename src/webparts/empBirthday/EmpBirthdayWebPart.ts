@@ -1,28 +1,32 @@
-import { Version } from '@microsoft/sp-core-library';
+import { Version } from "@microsoft/sp-core-library";
+
 import {
   IPropertyPaneConfiguration,
   PropertyPaneTextField,
   PropertyPaneSlider,
-  PropertyPaneChoiceGroup
-} from '@microsoft/sp-property-pane';
-import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
+  PropertyPaneChoiceGroup,
+  PropertyPaneDropdown
+} from "@microsoft/sp-property-pane";
 
-import * as React from 'react';
-import * as ReactDom from 'react-dom';
+import { BaseClientSideWebPart } from "@microsoft/sp-webpart-base";
 
-import EmpBirthday from './components/EmpBirthday';
-import { IEmpBirthdayWebPartProps } from './IEmpBirthdayWebPartProps';
+import * as React from "react";
+import * as ReactDom from "react-dom";
+
+import EmpBirthday from "./components/EmpBirthday";
+import { IEmpBirthdayWebPartProps } from "./IEmpBirthdayWebPartProps";
 
 import { spfi, SPFx } from "@pnp/sp";
 import { graphfi, SPFx as GraphSPFx } from "@pnp/graph";
 
-import img1 from './assets/bg/Image-1.png';
-import img2 from './assets/bg/Image-2.png';
-import img3 from './assets/bg/Image-3.png';
-import img4 from './assets/bg/Image-4.png';
+// Background Images
+import img1 from "./assets/bg/Image-1.png";
+import img2 from "./assets/bg/Image-2.png";
+import img3 from "./assets/bg/Image-3.png";
+import img4 from "./assets/bg/Image-4.png";
 
 export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthdayWebPartProps> {
-
+  
   private _sp = spfi();
   private _graph = graphfi();
 
@@ -30,8 +34,15 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
 
   public async onInit(): Promise<void> {
     await super.onInit();
+
+    // Setup PnP Clients
     this._sp = spfi().using(SPFx(this.context));
     this._graph = graphfi().using(GraphSPFx(this.context));
+
+    // Default property values if not set
+    if (!this.properties.listName) this.properties.listName = "EmployeeBirthdays";
+    if (!this.properties.daysAhead) this.properties.daysAhead = 15;
+    if (!this.properties.eventFilter) this.properties.eventFilter = "both";
   }
 
   private getBackgroundOptions() {
@@ -50,6 +61,9 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
       listName: this.properties.listName,
       daysAhead: this.properties.daysAhead,
       backgroundImage: this.properties.backgroundImage,
+      eventFilter: this.properties.eventFilter,
+
+      // PnP
       sp: this._sp,
       graph: this._graph
     });
@@ -62,32 +76,49 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
   }
 
   protected get dataVersion(): Version {
-    return Version.parse('1.0');
+    return Version.parse("1.0");
   }
 
+  // ----------------------------------------------------
+  // PROPERTY PANE
+  // ----------------------------------------------------
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
       pages: [
         {
-          header: { description: "Birthday Webpart Settings" },
+          header: { description: "Birthday & Workiversary Webpart Settings" },
           groups: [
             {
               groupFields: [
+
                 PropertyPaneTextField("description", {
                   label: "Webpart Title"
                 }),
+
                 PropertyPaneTextField("listName", {
                   label: "SharePoint List Name"
                 }),
+
                 PropertyPaneSlider("daysAhead", {
                   label: "Days to look ahead",
                   min: 1,
                   max: 60
                 }),
+
                 PropertyPaneChoiceGroup("backgroundImage", {
-                  label: "Choose Card Background",
+                  label: "Choose Card Background Image",
                   options: this.getBackgroundOptions()
+                }),
+
+                PropertyPaneDropdown("eventFilter", {
+                  label: "Show Events",
+                  options: [
+                    { key: "both", text: "Birthdays & Anniversaries" },
+                    { key: "birthday", text: "Birthdays Only" },
+                    { key: "anniversary", text: "Anniversaries Only" }
+                  ]
                 })
+
               ]
             }
           ]

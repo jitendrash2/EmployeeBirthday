@@ -1,19 +1,24 @@
 @import '~@fluentui/react/dist/sass/References.scss';
 
-/* HOST WRAPPER */
+/* ----------------------------------------------------
+   HOST WRAPPER
+---------------------------------------------------- */
 .host {
   width: 100%;
   display: flex;
   justify-content: center;
 }
 
-/* HORIZONTAL SCROLL ROW */
+/* ----------------------------------------------------
+   HORIZONTAL SCROLL ROW
+---------------------------------------------------- */
 .scrollRow {
   display: flex;
   flex-direction: row;
   gap: 25px;
   padding: 20px;
   overflow-x: auto;
+  white-space: nowrap;
 
   scrollbar-width: none;
 }
@@ -21,12 +26,16 @@
   display: none;
 }
 
-/* CARD DESIGN */
+/* ----------------------------------------------------
+   CARD DESIGN (PORTRAIT)
+---------------------------------------------------- */
 .cardContainer {
-  width: 260px;
-  min-height: 320px;
-  padding: 25px;
+  width: 240px;
+  min-height: 360px;
+  padding: 22px;
   border-radius: 22px;
+
+  flex: 0 0 auto;         /* <<< FIX: prevents overlapping & shrinking */
 
   display: flex;
   flex-direction: column;
@@ -36,22 +45,27 @@
   background-repeat: no-repeat;
   background-position: center;
 
-  background-color: rgba(255,255,255,0.85);
+  background-color: rgba(255,255,255,0.90);
   box-shadow: 0 4px 18px rgba(0,0,0,0.18);
   text-align: center;
+
+  overflow: hidden;
 }
 
-/* INTERNAL CONTENT AREA */
+/* ----------------------------------------------------
+   INTERNAL CONTENT ZONE
+---------------------------------------------------- */
 .cardContent {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  padding-bottom: 20px;    /* Extra spacing before footer */
 }
 
 /* HEADER */
 .headerText {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: #1d4fa8;
   margin-bottom: 15px;
@@ -59,9 +73,9 @@
 
 /* PROFILE IMAGE */
 .profileImageWrapper {
-  width: 140px;
-  height: 140px;
-  margin: 0 auto 15px;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
 }
 
 .profileImageWrapper img {
@@ -69,49 +83,50 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* NAME */
 .nameText {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 /* JOB TITLE */
 .jobTitle {
-  font-size: 15px;
+  font-size: 14px;
   color: #444;
 }
 
 /* DATE */
 .birthDate {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: #1d4fa8;
-  margin-top: 12px;
-
-  /* FIXED SPACE ABOVE FOOTER */
-  margin-bottom: 35px; /* you can adjust 30–45px as needed */
+  margin: 12px 0 14px;
 }
 
-/* AGE */
-.ageText {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 20px;
+/* YEARS COMPLETED — WORKIVERSARY */
+.yearsCompleted {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 22px;
+  color: #b8860b;  /* Gold */
 }
 
-/* FOOTER ICON AREA */
+/* ----------------------------------------------------
+   FOOTER BUTTONS (BOTTOM FIXED SPACING)
+---------------------------------------------------- */
 .footerBar {
   display: flex;
   justify-content: space-between;
-  padding: 0 30px;
+  padding: 0 25px;
   margin-top: auto;
+  padding-bottom: 8px; /* FIXED BOTTOM SPACING */
 }
 
-/* ICONS */
+/* ICON BUTTON */
 .iconBtn {
   cursor: pointer;
   transition: transform 0.25s ease;
@@ -121,27 +136,31 @@
   transform: scale(1.2);
 }
 
-/* NO DATA */
-.noData {
-  font-size: 18px;
-  color: #888;
-  margin-top: 40px;
-  text-align: center;
-}
-
-/* TODAY HIGHLIGHT */
-.todayCard {
-  animation: glowPulse 2s infinite ease-in-out;
+/* ----------------------------------------------------
+   TODAY GLOW ANIMATION
+---------------------------------------------------- */
+.todayGlow {
+  animation: glowPulse 1.6s infinite ease-in-out;
 }
 
 @keyframes glowPulse {
   0% {
-    box-shadow: 0 0 18px rgba(255,0,0,0.4);
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
   }
   50% {
-    box-shadow: 0 0 32px rgba(255,0,0,0.8);
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.9);
   }
   100% {
-    box-shadow: 0 0 18px rgba(255,0,0,0.4);
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
   }
+}
+
+/* ----------------------------------------------------
+   NO DATA
+---------------------------------------------------- */
+.noData {
+  font-size: 18px;
+  color: #888;
+  text-align: center;
+  margin-top: 30px;
 }

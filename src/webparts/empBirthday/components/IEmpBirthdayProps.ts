@@ -9,4 +9,5 @@ export interface IEmpBirthdayProps {
 
   sp: SPFI;
   graph: GraphFI;
+  eventFilter: string;
 }

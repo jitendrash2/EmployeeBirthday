@@ -6,6 +6,7 @@ export interface IEmpBirthdayWebPartProps {
   listName: string;
   daysAhead: number;
   backgroundImage: string;
+  eventFilter: string; 
   sp: SPFI;
   graph: GraphFI;
 }
