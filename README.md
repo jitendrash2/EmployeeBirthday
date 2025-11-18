@@ -1,73 +1,153 @@
-# emp-birthday
+# **Emp Birthday Web Part**
 
-## Summary
+## **Summary**
 
-Short summary on functionality and used technologies.
+The **Employee Birthday Web Part** is a modern, visually appealing SharePoint Framework (SPFx) solution that displays upcoming employee birthdays in a horizontally scrollable card layout.
+Each card includes profile photo, job title, formatted birthday (e.g., **December 01**), and visual indicators such as **Today** and **Tomorrow** labels.
 
-[picture of the solution in action, if possible]
+The web part provides rich personalization options, including custom card backgrounds and configurable day range lookahead.
 
-## Used SharePoint Framework Version
-
-![version](https://img.shields.io/badge/version-1.21.1-green.svg)
-
-## Applies to
-
-- [SharePoint Framework](https://aka.ms/spfx)
-- [Microsoft 365 tenant](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/set-up-your-developer-tenant)
-
-> Get your own free development tenant by subscribing to [Microsoft 365 developer program](http://aka.ms/o365devprogram)
-
-## Prerequisites
-
-> Any special pre-requisites?
-
-## Solution
-
-| Solution    | Author(s)                                               |
-| ----------- | ------------------------------------------------------- |
-| folder name | Author details (name, company, twitter alias with link) |
-
-## Version history
-
-| Version | Date             | Comments        |
-| ------- | ---------------- | --------------- |
-| 1.1     | March 10, 2021   | Update comment  |
-| 1.0     | January 29, 2021 | Initial release |
-
-## Disclaimer
-
-**THIS CODE IS PROVIDED _AS IS_ WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**
+![Birthday Card Preview](./assets/preview.png)
 
 ---
 
-## Minimal Path to Awesome
+## **Used SharePoint Framework Version**
 
-- Clone this repository
-- Ensure that you are at the solution folder
-- in the command-line run:
-  - **npm install**
-  - **gulp serve**
+![version](https://img.shields.io/badge/version-1.21.1-green.svg)
 
-> Include any additional steps as needed.
+---
 
-## Features
+## **Applies to**
 
-Description of the extension that expands upon high-level summary above.
+* [SharePoint Framework](https://aka.ms/spfx)
+* [Microsoft 365 tenant](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/set-up-your-developer-tenant)
 
-This extension illustrates the following concepts:
+> Get your own free development tenant by subscribing to
+> [Microsoft 365 developer program](http://aka.ms/o365devprogram)
 
-- topic 1
-- topic 2
-- topic 3
+---
 
-> Notice that better pictures and documentation will increase the sample usage and the value you are providing for others. Thanks for your submissions advance.
+## **Prerequisites**
 
-> Share your web part with others through Microsoft 365 Patterns and Practices program to get visibility and exposure. More details on the community, open-source projects and other activities from http://aka.ms/m365pnp.
+* A SharePoint list named **EmployeeBirthdays** (default)
 
-## References
+* Columns required:
 
-- [Getting started with SharePoint Framework](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/set-up-your-developer-tenant)
-- [Building for Microsoft teams](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/build-for-teams-overview)
-- [Use Microsoft Graph in your solution](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/web-parts/get-started/using-microsoft-graph-apis)
-- [Publish SharePoint Framework applications to the Marketplace](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/publish-to-marketplace-overview)
-- [Microsoft 365 Patterns and Practices](https://aka.ms/m365pnp) - Guidance, tooling, samples and open-source controls for your Microsoft 365 development
+  * `Title` (Single line of text)
+  * `Birthday` (Date only)
+  * `Email` (Single line of text)
+  * `JobTitle` (Optional – Single line of text)
+
+* API permission for:
+
+  * **Microsoft Graph › Users.Read**
+  * **Microsoft Graph › User.ReadBasic.All**
+  * Used to fetch user profile photos
+
+---
+
+## **Solution**
+
+| Solution             | Author(s)                               |
+| -------------------- | --------------------------------------- |
+| emp-birthday-webpart | Jitendra Sharma, Lead Software Engineer |
+
+---
+
+## **Version history**
+
+| Version | Date     | Comments                                  |
+| ------- | -------- | ----------------------------------------- |
+| 1.1     | Nov 2025 | Birthday enhancements and UI improvements |
+| 1.0     | Initial  | Initial release                           |
+
+---
+
+## **Disclaimer**
+
+**THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**
+
+---
+
+## **Minimal Path to Awesome**
+
+1. Clone this repository
+2. Open the solution folder
+3. Run:
+
+```
+npm install
+gulp serve
+```
+
+---
+
+# **Features**
+
+This web part includes the following key features:
+
+### **1. Horizontal Birthday Cards**
+
+* Modern layout using a left-to-right scrolling row
+* Cards maintain perfect alignment in all resolutions
+
+### **2. Custom Background Image Selection**
+
+* Multiple background templates included
+* Selection through property pane
+* Preview thumbnails shown
+
+### **3. Smart Date Formatting**
+
+* Birthday displayed as: **December 01**, **December 02**, etc.
+* Special labels:
+
+  * **Today**
+  * **Tomorrow**
+
+### **4. Age Calculation**
+
+* Shows upcoming age (e.g., **Turning 35 today!**) — backend-ready
+
+### **5. Sorting & Deduplication**
+
+* Removes duplicate user entries
+* Sorts by upcoming birthday order
+* Old birthdays automatically roll over to next year
+
+### **6. Microsoft Graph Photo Retrieval**
+
+* Automatically fetches profile photos
+* Fallback placeholder if not found
+
+### **7. Footer Icons**
+
+* Email icon opens a new mail window
+* Cake icon represents celebration
+* Icons aligned consistently at bottom of card
+
+### **8. Default List Name**
+
+* Automatically uses **EmployeeBirthdays** if user does not specify a list
+
+### **9. Configurable Lookahead Range**
+
+* Select number of upcoming days (default: **15 days**)
+* Display only birthdays within the timeframe
+
+### **10. Responsive & Mobile Friendly**
+
+* Smooth horizontal scrolling
+* Cards adjust to mobile layout without breaking
+
+---
+
+## **References**
+
+* [Getting started with SharePoint Framework](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/set-up-your-developer-tenant)
+* [Building for Microsoft Teams](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/build-for-teams-overview)
+* [Using Microsoft Graph APIs](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/web-parts/get-started/using-microsoft-graph-apis)
+* [Marketplace Publishing](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/publish-to-marketplace-overview)
+* [Microsoft 365 PnP](https://aka.ms/m365pnp)
+
+---
