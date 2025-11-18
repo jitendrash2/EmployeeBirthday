@@ -1,0 +1,33 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "b75e0ba4-23ea-4fe9-a437-2e4873533d2c",
+  "alias": "EmpBirthdayWebPart",
+  "componentType": "WebPart",
+  "version": "1.0.0",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": [
+    "SharePointWebPart",
+    "TeamsPersonalApp",
+    "TeamsTab",
+    "SharePointFullPage"
+  ],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [
+    {
+      "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+      "group": { "default": "Advanced" },
+      "title": { "default": "EmpBirthday" },
+      "description": { "default": "EmpBirthday description" },
+      "officeFabricIconFontName": "BirthdayCake",
+
+      "properties": {
+        "description": "Employee Birthdays",
+        "listName": "EmployeeBirthdays",
+        "daysAhead": 15,
+        "backgroundImage": ""
+      }
+    }
+  ]
+}

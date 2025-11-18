@@ -1,0 +1,147 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+/* HOST WRAPPER */
+.host {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* HORIZONTAL SCROLL ROW */
+.scrollRow {
+  display: flex;
+  flex-direction: row;
+  gap: 25px;
+  padding: 20px;
+  overflow-x: auto;
+
+  scrollbar-width: none;
+}
+.scrollRow::-webkit-scrollbar {
+  display: none;
+}
+
+/* CARD DESIGN */
+.cardContainer {
+  width: 260px;
+  min-height: 320px;
+  padding: 25px;
+  border-radius: 22px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  background-color: rgba(255,255,255,0.85);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+  text-align: center;
+}
+
+/* INTERNAL CONTENT AREA */
+.cardContent {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* HEADER */
+.headerText {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1d4fa8;
+  margin-bottom: 15px;
+}
+
+/* PROFILE IMAGE */
+.profileImageWrapper {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 15px;
+}
+
+.profileImageWrapper img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* NAME */
+.nameText {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* JOB TITLE */
+.jobTitle {
+  font-size: 15px;
+  color: #444;
+}
+
+/* DATE */
+.birthDate {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d4fa8;
+  margin-top: 12px;
+
+  /* FIXED SPACE ABOVE FOOTER */
+  margin-bottom: 35px; /* you can adjust 30–45px as needed */
+}
+
+/* AGE */
+.ageText {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* FOOTER ICON AREA */
+.footerBar {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 30px;
+  margin-top: auto;
+}
+
+/* ICONS */
+.iconBtn {
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.iconBtn:hover {
+  transform: scale(1.2);
+}
+
+/* NO DATA */
+.noData {
+  font-size: 18px;
+  color: #888;
+  margin-top: 40px;
+  text-align: center;
+}
+
+/* TODAY HIGHLIGHT */
+.todayCard {
+  animation: glowPulse 2s infinite ease-in-out;
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 18px rgba(255,0,0,0.4);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(255,0,0,0.8);
+  }
+  100% {
+    box-shadow: 0 0 18px rgba(255,0,0,0.4);
+  }
+}

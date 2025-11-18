@@ -1,0 +1,50 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "emp-birthday-client-side-solution",
+    "id": "1c534bfe-f24d-48eb-8ceb-7547618cb33c",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "Jitendra Sharma",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.21.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "EmpBirthday description"
+      },
+      "longDescription": {
+        "default": "EmpBirthday description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "emp-birthday Feature",
+        "description": "The feature that activates elements of the emp-birthday solution.",
+        "id": "768b23f8-9905-416c-b61d-5c2130edc47e",
+        "version": "1.0.0.0"
+      }
+    ],
+    "webApiPermissionRequests": [
+  {
+    "resource": "Microsoft Graph",
+    "scope": "User.ReadBasic.All"
+  },
+  {
+    "resource": "Microsoft Graph",
+    "scope": "User.Read.All"
+  }
+]
+  },
+  "paths": {
+    "zippedPackage": "solution/emp-birthday.sppkg"
+  }
+}
