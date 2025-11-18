@@ -7,7 +7,9 @@ Each card includes profile photo, job title, formatted birthday (e.g., **Decembe
 
 The web part provides rich personalization options, including custom card backgrounds and configurable day range lookahead.
 
-![Birthday Card Preview](./assets/preview.png)
+![Preview](./assets/preview-screenshot.png)
+
+![Scrolling Demo](./assets/scrolling-mockup.png)
 
 ---
 
