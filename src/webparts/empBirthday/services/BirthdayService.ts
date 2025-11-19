@@ -10,6 +10,7 @@ import "@pnp/graph/photos";
 
 import { IBirthday } from "../components/IBirthday";
 import placeholderImage from "../assets/user_profile.png";
+import CacheService from "./CacheService";
 
 export default class BirthdayService {
 
@@ -23,7 +24,68 @@ export default class BirthdayService {
     this._graph = graph;
   }
 
-  // ---------------- BIRTHDAYS (LIST) ----------------
+  // -------------------------
+  // MAIN: LOAD EVENTS WITH CACHE
+  // -------------------------
+  public async getAllEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
+
+    // 1) Try LOAD FROM CACHE
+    const cached = CacheService.load();
+
+    if (cached && !CacheService.isExpired(cached.timestamp)) {
+      console.log("Loaded events from CACHE");
+
+      // Start background refresh (non-blocking)
+      this.refreshCacheInBackground(listName, daysAhead);
+
+      return cached.data;
+    }
+
+    // 2) CACHE EMPTY OR EXPIRED → Load fresh from API
+    console.log("Loaded events from API");
+
+    const freshData = await this.loadFreshEvents(listName, daysAhead);
+
+    // Save cache
+    CacheService.save(freshData);
+
+    return freshData;
+  }
+
+  // -------------------------
+  // LOAD LIVE DATA
+  // -------------------------
+  private async loadFreshEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
+    const birthdays = await this.getBirthdays(listName, daysAhead);
+    const anniversaries = await this.getAnniversaries(daysAhead);
+
+    const combined = [...birthdays, ...anniversaries];
+
+    combined.sort((a, b) =>
+      (a.NextEventDate?.getTime() ?? 0) -
+      (b.NextEventDate?.getTime() ?? 0)
+    );
+
+    return combined;
+  }
+
+  // -------------------------
+  // BACKGROUND REFRESH (15 minutes)
+  // -------------------------
+  private async refreshCacheInBackground(listName: string, daysAhead: number) {
+    setTimeout(async () => {
+      console.log("Background refresh started...");
+
+      const data = await this.loadFreshEvents(listName, daysAhead);
+      CacheService.save(data);
+
+      console.log("Background refresh complete.");
+    }, 200);
+  }
+
+  // -------------------------
+  // BIRTHDAY LIST (SharePoint)
+  // -------------------------
   public async getBirthdays(listName: string, daysAhead: number): Promise<IBirthday[]> {
 
     const listToUse =
@@ -42,7 +104,6 @@ export default class BirthdayService {
     const results: IBirthday[] = [];
 
     for (const i of items) {
-
       if (!i.Birthday) continue;
 
       const birth = new Date(i.Birthday);
@@ -51,7 +112,6 @@ export default class BirthdayService {
       if (nextDate < today) nextDate.setFullYear(nextDate.getFullYear() + 1);
 
       if (nextDate <= endDate) {
-
         const photo = await this.getPhoto(i.Email);
 
         results.push({
@@ -72,7 +132,9 @@ export default class BirthdayService {
     return results;
   }
 
-  // ---------------- ANNIVERSARIES (AD USERS) ----------------
+  // -------------------------
+  // ANNIVERSARIES (Graph Users)
+  // -------------------------
   public async getAnniversaries(daysAhead: number): Promise<IBirthday[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -114,28 +176,26 @@ export default class BirthdayService {
     return results;
   }
 
-  // ---------------- COMBINED ----------------
-  public async getAllEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
-    const birthdays = await this.getBirthdays(listName, daysAhead);
-    const anniversaries = await this.getAnniversaries(daysAhead);
-
-    const combined = [...birthdays, ...anniversaries];
-
-    combined.sort((a, b) =>
-      (a.NextEventDate?.getTime() ?? 0) -
-      (b.NextEventDate?.getTime() ?? 0)
-    );
-
-    return combined;
-  }
-
-  // ---------------- PHOTO FETCH ----------------
+  // -------------------------
+  // GET PHOTO
+  // -------------------------
   private async getPhoto(email: string): Promise<string> {
-    try {
-      const blob = await this._graph.users.getById(email).photo.getBlob();
-      return URL.createObjectURL(blob);
-    } catch {
-      return placeholderImage; // LOCAL FALLBACK IMAGE
-    }
+  try {
+    const blob = await this._graph.users.getById(email).photo.getBlob();
+
+    return await this.blobToBase64(blob); // convert to base64
+  } catch {
+    return placeholderImage; // always fallback
   }
+}
+
+private blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 }

@@ -22,6 +22,7 @@
     "@pnp/graph": "^4.17.0",
     "@pnp/queryable": "^4.17.0",
     "@pnp/sp": "^4.17.0",
+    "@pnp/spfx-controls-react": "^3.23.0",
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-icons": "^4.10.1",

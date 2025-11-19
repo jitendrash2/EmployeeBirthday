@@ -55,94 +55,130 @@ export default function EmpBirthday(props: IEmpBirthdayProps) {
 
 
   if (loading) {
-    return (
-      <div className={styles.host}>
-        <div className={styles.noData}>Loading events...</div>
-      </div>
-    );
-  }
-
-
   return (
     <div className={styles.host}>
       <div className={styles.scrollRow}>
 
-        {events.length === 0 && (
-          <div className={styles.noData}>
-            No upcoming events found for the selected filter.
-          </div>
-        )}
+        {/* 3 shimmer placeholder cards */}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className={styles.cardContainer}>
+            
+            <div className={styles.cardContent}>
 
-        {events.map((p) => {
+              {/* Header placeholder */}
+              <div className={styles.shimmerHeader}></div>
 
-          const isAnniv = p.IsAnniversary;
+              {/* Profile circle */}
+              <div className={styles.shimmerCircle}></div>
 
-          return (
-            <div
-              key={p.Email + (isAnniv ? "-anniv" : "-bday")}
-              className={`${styles.cardContainer} ${p.IsToday ? styles.todayGlow : ""}`}
-              style={{
-                backgroundImage: `url(${props.backgroundImage})`
-              }}
-            >
+              {/* Name */}
+              <div className={styles.shimmerLine}></div>
 
-              {/* ---------------------- CONTENT ---------------------- */}
-              <div className={styles.cardContent}>
+              {/* Job title */}
+              <div className={styles.shimmerLineShort}></div>
 
-                <div className={styles.headerText}>
-                  {isAnniv ? "Happy Workiversary!" : "Happy Birthday!"}
-                </div>
-
-                <div className={styles.profileImageWrapper}>
-                  <img
-                    src={p.PhotoUrl || placeholderImage}
-                    alt={p.Title ?? ""}
-                  />
-                </div>
-
-                <div className={styles.nameText}>{p.Title}</div>
-                <div className={styles.jobTitle}>{p.JobTitle ?? ""}</div>
-
-                <div className={styles.birthDate}>
-                  {isAnniv
-                    ? formatAnniversary(p.HireDate!)
-                    : formatBirthday(p.Birthday!)
-                  }
-                </div>
-
-                {isAnniv && (
-                  <div className={styles.yearsCompleted}>
-                    {formatYearsCompleted(p.YearsCompleted!)}
-                  </div>
-                )}
-
-              </div>
-
-              {/* ---------------------- FOOTER ----------------------- */}
-              <div className={styles.footerBar}>
-
-                <div
-                  className={styles.iconBtn}
-                  onClick={() => (window.location.href = `mailto:${p.Email}`)}
-                >
-                  <MdEmail size={26} color="#1d4fa8" />
-                </div>
-
-                <div className={styles.iconBtn}>
-                  {isAnniv ? (
-                    <FaTrophy size={26} color="#c49b00" />
-                  ) : (
-                    <FaBirthdayCake size={26} color="#e63946" />
-                  )}
-                </div>
-
-              </div>
+              {/* Date */}
+              <div className={styles.shimmerLineShort}></div>
 
             </div>
-          );
-        })}
+
+            {/* Footer Icons */}
+            <div className={styles.footerBar}>
+              <div className={styles.shimmerIcon}></div>
+              <div className={styles.shimmerIcon}></div>
+            </div>
+
+          </div>
+        ))}
 
       </div>
     </div>
   );
+}
+
+  return (
+  <div className={styles.host}>
+
+    {/* ------------------- WEBPART TITLE ------------------- */}
+    <div className={styles.scrollRow}>
+
+      {events.length === 0 && (
+        <div className={styles.noData}>
+          No upcoming events found for the selected filter.
+        </div>
+      )}
+
+      {events.map((p) => {
+
+        const isAnniv = p.IsAnniversary;
+
+        return (
+
+          <div
+            key={p.Email + (isAnniv ? "-anniv" : "-bday")}
+            className={`${styles.cardContainer} ${p.IsToday ? styles.todayGlow : ""}`}
+            style={{
+              backgroundImage: `url(${props.backgroundImage})`
+            }}
+          >
+
+            {/* ---------------------- CONTENT ---------------------- */}
+            <div className={styles.cardContent}>
+
+              <div className={styles.headerText}>
+                {isAnniv ? "Happy Workiversary!" : "Happy Birthday!"}
+              </div>
+
+              <div className={styles.profileImageWrapper}>
+                <img
+                  src={p.PhotoUrl || placeholderImage}
+                  alt={p.Title ?? ""}
+                />
+              </div>
+
+              <div className={styles.nameText}>{p.Title}</div>
+              <div className={styles.jobTitle}>{p.JobTitle ?? ""}</div>
+
+              <div className={styles.birthDate}>
+                {isAnniv
+                  ? formatAnniversary(p.HireDate!)
+                  : formatBirthday(p.Birthday!)
+                }
+              </div>
+
+              {isAnniv && (
+                <div className={styles.yearsCompleted}>
+                  {formatYearsCompleted(p.YearsCompleted!)}
+                </div>
+              )}
+
+            </div>
+
+            {/* ---------------------- FOOTER ----------------------- */}
+            <div className={styles.footerBar}>
+
+              <div
+                className={styles.iconBtn}
+                onClick={() => (window.location.href = `mailto:${p.Email}`)}
+              >
+                <MdEmail size={26} color="#1d4fa8" />
+              </div>
+
+              <div className={styles.iconBtn}>
+                {isAnniv ? (
+                  <FaTrophy size={26} color="#c49b00" />
+                ) : (
+                  <FaBirthdayCake size={26} color="#e63946" />
+                )}
+              </div>
+
+            </div>
+
+          </div>
+        );
+      })}
+
+    </div>
+  </div>
+);
 }

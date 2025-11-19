@@ -31,7 +31,7 @@
 ---------------------------------------------------- */
 .cardContainer {
   width: 240px;
-  min-height: 360px;
+  min-height: 340px;
   padding: 22px;
   border-radius: 22px;
 
@@ -69,6 +69,14 @@
   font-weight: 700;
   color: #1d4fa8;
   margin-bottom: 15px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d4fa8;
+  margin-bottom: 20px;
+  margin-left: 10px;     /* optional */
 }
 
 /* PROFILE IMAGE */
@@ -163,4 +171,67 @@
   color: #888;
   text-align: center;
   margin-top: 30px;
+}
+
+/* ------------------------------------------------------
+   SHIMMER EFFECT (Skeleton Loader)
+------------------------------------------------------ */
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #e0e0e0 0%,
+    #f5f5f5 50%,
+    #e0e0e0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerAnim 1.4s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmerAnim {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Header placeholder */
+.shimmerHeader {
+  @extend .shimmer;
+  width: 70%;
+  height: 22px;
+  margin: 10px auto 25px auto;
+  border-radius: 4px;
+}
+
+/* Round profile image placeholder */
+.shimmerCircle {
+  @extend .shimmer;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+}
+
+/* Medium text */
+.shimmerLine {
+  @extend .shimmer;
+  width: 60%;
+  height: 16px;
+  margin: 10px auto;
+}
+
+/* Shorter text line */
+.shimmerLineShort {
+  @extend .shimmer;
+  width: 40%;
+  height: 14px;
+  margin: 8px auto 15px auto;
+}
+
+/* Icons */
+.shimmerIcon {
+  @extend .shimmer;
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
 }
