@@ -24,37 +24,36 @@ export default class BirthdayService {
     this._graph = graph;
   }
 
-  // -------------------------
+  // ----------------------------------------------------
   // MAIN: LOAD EVENTS WITH CACHE
-  // -------------------------
+  // ----------------------------------------------------
   public async getAllEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
 
-    // 1) Try LOAD FROM CACHE
+    // 1. LOAD CACHE
     const cached = CacheService.load();
 
     if (cached && !CacheService.isExpired(cached.timestamp)) {
       console.log("Loaded events from CACHE");
 
-      // Start background refresh (non-blocking)
+      // Background refresh → non-blocking
       this.refreshCacheInBackground(listName, daysAhead);
 
-      return cached.data;
+      return cached.data as IBirthday[];
     }
 
-    // 2) CACHE EMPTY OR EXPIRED → Load fresh from API
+    // 2. CACHE EMPTY OR EXPIRED → Load from API
     console.log("Loaded events from API");
 
-    const freshData = await this.loadFreshEvents(listName, daysAhead);
+    const fresh = await this.loadFreshEvents(listName, daysAhead);
 
-    // Save cache
-    CacheService.save(freshData);
+    CacheService.save(fresh);
 
-    return freshData;
+    return fresh;
   }
 
-  // -------------------------
+  // ----------------------------------------------------
   // LOAD LIVE DATA
-  // -------------------------
+  // ----------------------------------------------------
   private async loadFreshEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
     const birthdays = await this.getBirthdays(listName, daysAhead);
     const anniversaries = await this.getAnniversaries(daysAhead);
@@ -62,16 +61,15 @@ export default class BirthdayService {
     const combined = [...birthdays, ...anniversaries];
 
     combined.sort((a, b) =>
-      (a.NextEventDate?.getTime() ?? 0) -
-      (b.NextEventDate?.getTime() ?? 0)
+      (a.NextEventDate?.getTime() ?? 0) - (b.NextEventDate?.getTime() ?? 0)
     );
 
     return combined;
   }
 
-  // -------------------------
+  // ----------------------------------------------------
   // BACKGROUND REFRESH (15 minutes)
-  // -------------------------
+  // ----------------------------------------------------
   private async refreshCacheInBackground(listName: string, daysAhead: number) {
     setTimeout(async () => {
       console.log("Background refresh started...");
@@ -83,19 +81,16 @@ export default class BirthdayService {
     }, 200);
   }
 
-  // -------------------------
-  // BIRTHDAY LIST (SharePoint)
-  // -------------------------
+  // ----------------------------------------------------
+  // GET BIRTHDAYS (SharePoint List)
+  // ----------------------------------------------------
   public async getBirthdays(listName: string, daysAhead: number): Promise<IBirthday[]> {
 
     const listToUse =
       listName?.trim() !== "" ? listName : this.defaultListName;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + daysAhead);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(today); end.setDate(today.getDate() + daysAhead);
 
     const items = await this._sp.web.lists
       .getByTitle(listToUse)
@@ -108,10 +103,10 @@ export default class BirthdayService {
 
       const birth = new Date(i.Birthday);
 
-      let nextDate = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-      if (nextDate < today) nextDate.setFullYear(nextDate.getFullYear() + 1);
+      let next = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+      if (next < today) next.setFullYear(next.getFullYear() + 1);
 
-      if (nextDate <= endDate) {
+      if (next <= end) {
         const photo = await this.getPhoto(i.Email);
 
         results.push({
@@ -121,10 +116,10 @@ export default class BirthdayService {
           Birthday: i.Birthday,
           PhotoUrl: photo,
           IsAnniversary: false,
-          NextEventDate: nextDate,
+          NextEventDate: next,
           IsToday:
-            nextDate.getDate() === today.getDate() &&
-            nextDate.getMonth() === today.getMonth()
+            next.getDate() === today.getDate() &&
+            next.getMonth() === today.getMonth()
         });
       }
     }
@@ -132,13 +127,15 @@ export default class BirthdayService {
     return results;
   }
 
-  // -------------------------
-  // ANNIVERSARIES (Graph Users)
-  // -------------------------
+  // ----------------------------------------------------
+  // GET ANNIVERSARIES FROM GRAPH API
+  // ----------------------------------------------------
   public async getAnniversaries(daysAhead: number): Promise<IBirthday[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(today); end.setDate(today.getDate() + daysAhead);
+
+    // Load AD Users
     const users = await this._graph.users
       .select("displayName", "mail", "jobTitle", "employeeHireDate")
       .top(999)();
@@ -150,10 +147,12 @@ export default class BirthdayService {
 
       let hire = u.employeeHireDate
         ? new Date(u.employeeHireDate)
-        : new Date(2017, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+        : new Date(2015, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
 
       let nextAnniv = new Date(today.getFullYear(), hire.getMonth(), hire.getDate());
       if (nextAnniv < today) nextAnniv.setFullYear(nextAnniv.getFullYear() + 1);
+
+      if (nextAnniv > end) continue;
 
       const yearsCompleted = nextAnniv.getFullYear() - hire.getFullYear();
       const photo = await this.getPhoto(u.mail);
@@ -176,26 +175,24 @@ export default class BirthdayService {
     return results;
   }
 
-  // -------------------------
-  // GET PHOTO
-  // -------------------------
+  // ----------------------------------------------------
+  // GET USER PHOTO (Graph → Base64 → Cached)
+  // ----------------------------------------------------
   private async getPhoto(email: string): Promise<string> {
-  try {
-    const blob = await this._graph.users.getById(email).photo.getBlob();
-
-    return await this.blobToBase64(blob); // convert to base64
-  } catch {
-    return placeholderImage; // always fallback
+    try {
+      const blob = await this._graph.users.getById(email).photo.getBlob();
+      return await this.blobToBase64(blob);
+    } catch {
+      return placeholderImage;
+    }
   }
-}
 
-private blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
+  private blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
 }
