@@ -2,130 +2,164 @@ import * as React from "react";
 import styles from "./EventModal.module.scss";
 import { IEventModalProps } from "./IEventModalProps";
 import { MdEmail } from "react-icons/md";
-import { FaBirthdayCake, FaTrophy } from "react-icons/fa";
+import { FaBirthdayCake, FaTrophy, FaUserPlus } from "react-icons/fa";
+import { SiMicrosoftteams } from "react-icons/si";
 import confetti from "canvas-confetti";
 import { formatBirthday } from "../helpers/BirthdayHelper";
 import { formatAnniversary } from "../helpers/AnniversaryHelper";
-import teamsIcon from "../assets/teams_icon.png";
+import { formatDaysOnTeam, formatNewHireDate } from "../helpers/NewHireHelper";
+import { getInitials } from "../helpers/VisualHelper";
+
+const themeClassNames = {
+  simple: styles.themeSimple,
+  celebration: styles.themeCelebration,
+  sunrise: styles.themeSunrise,
+  meadow: styles.themeMeadow,
+  royal: styles.themeRoyal
+};
 
 export default function EventModal({
   event,
   onClose,
-  placeholderImage,
-  backgroundImage
-}: IEventModalProps) {
+  backgroundVariant
+}: IEventModalProps): React.ReactElement {
 
-  const isAnniv = event.IsAnniversary;
+  const isAnniversary = Boolean(event.IsAnniversary);
+  const isNewHire = Boolean(event.IsNewHire);
+  const canContact = Boolean(event.Email?.trim());
+  const themeClassName = themeClassNames[backgroundVariant];
 
-  // -----------------------
-  // CONFETTI FOR TODAY ONLY
-  // -----------------------
   React.useEffect(() => {
-    if (event.IsToday) {
-      setTimeout(() => {
-        confetti({
-          particleCount: 120,
-          spread: 90,
-          origin: { y: 0.3 }
-        });
-
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.7 }
-        });
-      }, 200);
+    if (!event.IsToday) {
+      return;
     }
-  }, [event]);
+
+    const timeoutId = window.setTimeout(() => {
+      Promise.resolve(confetti({
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.3 }
+      })).catch((error) => {
+        console.error("Failed to render celebration confetti.", error);
+      });
+
+      Promise.resolve(confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.7 }
+      })).catch((error) => {
+        console.error("Failed to render celebration confetti.", error);
+      });
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [event.IsToday]);
+
+  const eventTitle = isNewHire
+    ? "Welcome Aboard!"
+    : isAnniversary
+      ? "Happy Workiversary!"
+      : "Happy Birthday!";
+  const dateText = isNewHire
+    ? formatNewHireDate(event.HireDate!)
+    : isAnniversary
+      ? formatAnniversary(event.HireDate!)
+      : formatBirthday(event.Birthday!);
+  const supportingText = isNewHire
+    ? formatDaysOnTeam(event.DaysSinceHire ?? 0)
+    : isAnniversary
+      ? event.YearsCompleted
+        ? `Celebrating ${event.YearsCompleted} years`
+        : ""
+      : "";
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div
-        className={styles.modalBox}
-        style={{
-          backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}
-        onClick={(e) => e.stopPropagation()}
+        className={`${styles.modalBox} ${themeClassName}`}
+        onClick={(clickEvent) => clickEvent.stopPropagation()}
       >
+        <div className={styles.modalBackdrop} />
 
-        {/* Close Button */}
         <div className={styles.closeBtn} onClick={onClose}>
           ×
         </div>
 
-        {/* Photo */}
         <div className={styles.photoWrapper}>
-          <img
-            src={event.PhotoUrl || placeholderImage}
-            alt={event.Title || ""}
-          />
+          {event.PhotoUrl?.trim() ? (
+            <img
+              src={event.PhotoUrl}
+              alt={event.Title || ""}
+            />
+          ) : (
+            <div className={styles.photoFallback}>
+              {getInitials(
+                event.Title,
+                isNewHire ? "NH" : isAnniversary ? "WA" : "HB"
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Header */}
         <div className={styles.eventTitle}>
-          {isAnniv ? "Happy Workiversary!" : "Happy Birthday!"}
+          {eventTitle}
         </div>
 
-        {/* Name */}
         <div className={styles.nameText}>{event.Title}</div>
-
-        {/* Job Title */}
         <div className={styles.jobTitle}>{event.JobTitle || ""}</div>
 
-        {/* Date */}
         <div className={styles.dateText}>
-          {isAnniv
-            ? formatAnniversary(event.HireDate!)
-            : formatBirthday(event.Birthday!)
-          }
+          {dateText}
         </div>
 
-        {/* Years (Workiversary) */}
-        {isAnniv && (
-          <div className={styles.yearsText}>
-            Celebrating {event.YearsCompleted} years
+        {supportingText && (
+          <div className={`${styles.yearsText} ${isNewHire ? styles.supportTextNewHire : ""}`}>
+            {supportingText}
           </div>
         )}
 
-        {/* Footer */}
         <div className={styles.modalFooter}>
-          {/* Email */}
           <div
-            className={styles.iconBtn}
-            onClick={() => (window.location.href = `mailto:${event.Email}`)}
+            className={`${styles.iconBtn} ${!canContact ? styles.iconBtnDisabled : ""}`}
+            onClick={() => {
+              if (!canContact) {
+                return;
+              }
+
+              window.location.href = `mailto:${event.Email}`;
+            }}
           >
-            <MdEmail size={28} color="#1d4fa8" />
+            <MdEmail size={28} color={canContact ? "#1d4fa8" : "#9aa7bf"} />
           </div>
 
-          {/* Teams */}
           <div
-            className={styles.iconBtn}
-            onClick={() =>
+            className={`${styles.iconBtn} ${!canContact ? styles.iconBtnDisabled : ""}`}
+            onClick={() => {
+              if (!canContact) {
+                return;
+              }
+
               window.open(
                 `https://teams.microsoft.com/l/chat/0/0?users=${event.Email}`,
                 "_blank"
-              )
-            }
+              );
+            }}
           >
-            <img
-              src={teamsIcon}
-              alt="Teams Chat"
-              style={{ width: 28, height: 28 }}
-            />
+            <SiMicrosoftteams size={26} color={canContact ? "#5b5fc7" : "#9aa7bf"} />
           </div>
 
-          {/* Trophy / Cake */}
           <div className={styles.iconBtn}>
-            {isAnniv ? (
+            {isNewHire ? (
+              <FaUserPlus size={26} color="#1f9d6a" />
+            ) : isAnniversary ? (
               <FaTrophy size={28} color="#c49b00" />
             ) : (
               <FaBirthdayCake size={28} color="#e63946" />
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

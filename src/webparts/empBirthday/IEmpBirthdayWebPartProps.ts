@@ -1,12 +1,18 @@
-import { SPFI } from "@pnp/sp";
-import { GraphFI } from "@pnp/graph";
+import { BackgroundVariant } from "./helpers/VisualHelper";
 
 export interface IEmpBirthdayWebPartProps {
   description: string;
+  heroEyebrowText?: string;
+  heroSubtitleText?: string;
+  heroHighlightText?: string;
   listName: string;
   daysAhead: number;
-  backgroundImage: string;
-  eventFilter: string; 
-  sp: SPFI;
-  graph: GraphFI;
+  newHireDays: number;
+  backgroundVariant?: BackgroundVariant;
+  backgroundImage?: string;
+  eventFilter?: string;
+  showAllCards?: boolean;
+  showBirthdays?: boolean;
+  showAnniversaries?: boolean;
+  showNewHires?: boolean;
 }

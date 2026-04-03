@@ -9,190 +9,508 @@ import "@pnp/graph/users";
 import "@pnp/graph/photos";
 
 import { IBirthday } from "../components/IBirthday";
-import placeholderImage from "../assets/user_profile.png";
+import {
+  EventType,
+  getEventSelectionKey
+} from "../helpers/EventSelectionHelper";
 import CacheService from "./CacheService";
 
+type EventRefreshCallback = (events: IBirthday[]) => void;
+
+interface IGetAllEventsOptions {
+  forceRefresh?: boolean;
+  onBackgroundRefresh?: EventRefreshCallback;
+}
+
+interface IDataRequestResult {
+  events: IBirthday[];
+  error?: unknown;
+}
+
 export default class BirthdayService {
+
+  private static readonly BACKGROUND_REFRESH_DELAY = 200;
 
   private _sp: SPFI;
   private _graph: GraphFI;
 
-  private defaultListName: string = "EmployeeBirthdays";
+  private readonly defaultListName: string = "EmployeeBirthdays";
 
   constructor(sp: SPFI, graph: GraphFI) {
     this._sp = sp;
     this._graph = graph;
   }
 
-  // ----------------------------------------------------
-  // MAIN: LOAD EVENTS WITH CACHE
-  // ----------------------------------------------------
-  public async getAllEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
-
-    // 1. LOAD CACHE
-    const cached = CacheService.load();
-
-    if (cached && !CacheService.isExpired(cached.timestamp)) {
-      console.log("Loaded events from CACHE");
-
-      // Background refresh → non-blocking
-      this.refreshCacheInBackground(listName, daysAhead);
-
-      return cached.data as IBirthday[];
-    }
-
-    // 2. CACHE EMPTY OR EXPIRED → Load from API
-    console.log("Loaded events from API");
-
-    const fresh = await this.loadFreshEvents(listName, daysAhead);
-
-    CacheService.save(fresh);
-
-    return fresh;
-  }
-
-  // ----------------------------------------------------
-  // LOAD LIVE DATA
-  // ----------------------------------------------------
-  private async loadFreshEvents(listName: string, daysAhead: number): Promise<IBirthday[]> {
-    const birthdays = await this.getBirthdays(listName, daysAhead);
-    const anniversaries = await this.getAnniversaries(daysAhead);
-
-    const combined = [...birthdays, ...anniversaries];
-
-    combined.sort((a, b) =>
-      (a.NextEventDate?.getTime() ?? 0) - (b.NextEventDate?.getTime() ?? 0)
+  private getNormalizedEventTypes(selectedEventTypes: EventType[]): EventType[] {
+    const normalizedEventTypes = selectedEventTypes.filter((eventType, index, source) =>
+      source.indexOf(eventType) === index
     );
 
-    return combined;
+    return normalizedEventTypes.length > 0
+      ? normalizedEventTypes
+      : ["birthday", "anniversary", "newHire"];
   }
 
-  // ----------------------------------------------------
-  // BACKGROUND REFRESH (15 minutes)
-  // ----------------------------------------------------
-  private async refreshCacheInBackground(listName: string, daysAhead: number) {
-    setTimeout(async () => {
-      console.log("Background refresh started...");
+  private getCacheScope(
+    listName: string,
+    daysAhead: number,
+    newHireDays: number,
+    selectedEventTypes: EventType[]
+  ): string {
+    const normalizedListName = listName?.trim() || this.defaultListName;
+    const selectionKey = getEventSelectionKey(
+      this.getNormalizedEventTypes(selectedEventTypes)
+    );
 
-      const data = await this.loadFreshEvents(listName, daysAhead);
-      CacheService.save(data);
-
-      console.log("Background refresh complete.");
-    }, 200);
+    return `${normalizedListName}::${daysAhead}::${newHireDays}::${selectionKey}`;
   }
 
-  // ----------------------------------------------------
-  // GET BIRTHDAYS (SharePoint List)
-  // ----------------------------------------------------
+  private getStartOfDay(date: Date): Date {
+    const normalizedDate = new Date(date.getTime());
+
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    return normalizedDate;
+  }
+
+  private getStartOfToday(): Date {
+    return this.getStartOfDay(new Date());
+  }
+
+  private parseDate(value?: string | number | Date): Date | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const parsed = value instanceof Date
+      ? new Date(value.getTime())
+      : new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return undefined;
+    }
+
+    return this.getStartOfDay(parsed);
+  }
+
+  private getNextOccurrence(sourceDate: Date): Date {
+    const today = this.getStartOfToday();
+    const nextOccurrence = new Date(
+      today.getFullYear(),
+      sourceDate.getMonth(),
+      sourceDate.getDate()
+    );
+
+    nextOccurrence.setHours(0, 0, 0, 0);
+
+    if (nextOccurrence < today) {
+      nextOccurrence.setFullYear(nextOccurrence.getFullYear() + 1);
+    }
+
+    return nextOccurrence;
+  }
+
+  private getDayDifference(fromDate: Date, toDate: Date): number {
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+    return Math.round((toDate.getTime() - fromDate.getTime()) / millisecondsPerDay);
+  }
+
+  private hydrateCelebrationEvent(event: IBirthday): IBirthday | undefined {
+    const sourceDate = event.IsAnniversary
+      ? this.parseDate(event.HireDate) ?? this.parseDate(event.NextEventDate)
+      : this.parseDate(event.Birthday) ?? this.parseDate(event.NextEventDate);
+
+    if (!sourceDate) {
+      return undefined;
+    }
+
+    const nextEventDate = this.getNextOccurrence(sourceDate);
+    const daysUntilEvent = this.getDayDifference(this.getStartOfToday(), nextEventDate);
+
+    return {
+      ...event,
+      NextEventDate: nextEventDate,
+      DaysUntilEvent: daysUntilEvent,
+      DaysSinceHire: undefined,
+      IsToday: daysUntilEvent === 0,
+      IsNewHire: false,
+      YearsCompleted: event.IsAnniversary
+        ? nextEventDate.getFullYear() - sourceDate.getFullYear()
+        : event.YearsCompleted
+    };
+  }
+
+  private hydrateNewHireEvent(event: IBirthday): IBirthday | undefined {
+    const hireDate = this.parseDate(event.HireDate) ?? this.parseDate(event.NextEventDate);
+
+    if (!hireDate) {
+      return undefined;
+    }
+
+    const today = this.getStartOfToday();
+    const daysSinceHire = this.getDayDifference(hireDate, today);
+
+    if (daysSinceHire < 0) {
+      return undefined;
+    }
+
+    return {
+      ...event,
+      HireDate: hireDate.toISOString(),
+      NextEventDate: hireDate,
+      DaysUntilEvent: undefined,
+      DaysSinceHire: daysSinceHire,
+      IsToday: daysSinceHire === 0,
+      IsAnniversary: false,
+      IsNewHire: true,
+      YearsCompleted: undefined
+    };
+  }
+
+  private hydrateEvent(event: IBirthday): IBirthday | undefined {
+    if (event.IsNewHire) {
+      return this.hydrateNewHireEvent(event);
+    }
+
+    return this.hydrateCelebrationEvent(event);
+  }
+
+  private sortEvents(events: IBirthday[], selectedEventTypes: EventType[]): IBirthday[] {
+    const normalizedEventTypes = this.getNormalizedEventTypes(selectedEventTypes);
+    const isNewHireOnly = normalizedEventTypes.length === 1 &&
+      normalizedEventTypes[0] === "newHire";
+
+    return [...events].sort((left, right) => {
+      if (isNewHireOnly) {
+        const hireDayDifference = (left.DaysSinceHire ?? Number.MAX_SAFE_INTEGER) - (right.DaysSinceHire ?? Number.MAX_SAFE_INTEGER);
+
+        if (hireDayDifference !== 0) {
+          return hireDayDifference;
+        }
+
+        const hireDateDifference = (right.NextEventDate?.getTime() ?? 0) - (left.NextEventDate?.getTime() ?? 0);
+
+        if (hireDateDifference !== 0) {
+          return hireDateDifference;
+        }
+      }
+
+      if (Boolean(left.IsNewHire) !== Boolean(right.IsNewHire)) {
+        return left.IsNewHire ? 1 : -1;
+      }
+
+      if (left.IsNewHire && right.IsNewHire) {
+        const hireDayDifference = (left.DaysSinceHire ?? Number.MAX_SAFE_INTEGER) - (right.DaysSinceHire ?? Number.MAX_SAFE_INTEGER);
+
+        if (hireDayDifference !== 0) {
+          return hireDayDifference;
+        }
+
+        const hireDateDifference = (right.NextEventDate?.getTime() ?? 0) - (left.NextEventDate?.getTime() ?? 0);
+
+        if (hireDateDifference !== 0) {
+          return hireDateDifference;
+        }
+      } else {
+        const dayDifference = (left.DaysUntilEvent ?? Number.MAX_SAFE_INTEGER) - (right.DaysUntilEvent ?? Number.MAX_SAFE_INTEGER);
+
+        if (dayDifference !== 0) {
+          return dayDifference;
+        }
+
+        const eventDateDifference = (left.NextEventDate?.getTime() ?? Number.MAX_SAFE_INTEGER) - (right.NextEventDate?.getTime() ?? Number.MAX_SAFE_INTEGER);
+
+        if (eventDateDifference !== 0) {
+          return eventDateDifference;
+        }
+      }
+
+      return (left.Title ?? "").localeCompare(right.Title ?? "");
+    });
+  }
+
+  private normalizeEvents(events: IBirthday[], selectedEventTypes: EventType[]): IBirthday[] {
+    const hydratedEvents = events
+      .map((event) => this.hydrateEvent(event))
+      .filter((event): event is IBirthday => event !== undefined);
+
+    return this.sortEvents(hydratedEvents, selectedEventTypes);
+  }
+
+  private getGraphEmail(mail?: string | null, userPrincipalName?: string | null): string | undefined {
+    const preferredEmail = mail?.trim() || userPrincipalName?.trim();
+
+    return preferredEmail || undefined;
+  }
+
+  public async getAllEvents(
+    listName: string,
+    daysAhead: number,
+    newHireDays: number,
+    selectedEventTypes: EventType[],
+    options: IGetAllEventsOptions = {}
+  ): Promise<IBirthday[]> {
+    const normalizedEventTypes = this.getNormalizedEventTypes(selectedEventTypes);
+    const cacheScope = this.getCacheScope(listName, daysAhead, newHireDays, normalizedEventTypes);
+    const cached = CacheService.load<IBirthday[]>(cacheScope);
+
+    if (!options.forceRefresh && cached) {
+      const cachedEvents = this.normalizeEvents(cached.data, normalizedEventTypes);
+
+      if (CacheService.isExpired(cached.timestamp)) {
+        this.refreshCacheInBackground(
+          listName,
+          daysAhead,
+          newHireDays,
+          normalizedEventTypes,
+          options.onBackgroundRefresh
+        );
+      }
+
+      return cachedEvents;
+    }
+
+    try {
+      const freshEvents = await this.loadFreshEvents(
+        listName,
+        daysAhead,
+        newHireDays,
+        normalizedEventTypes
+      );
+
+      CacheService.save(cacheScope, freshEvents);
+
+      return freshEvents;
+    } catch (error) {
+      if (cached) {
+        console.warn("Live employee data load failed. Falling back to cached data.", error);
+        return this.normalizeEvents(cached.data, normalizedEventTypes);
+      }
+
+      throw error;
+    }
+  }
+
+  private async loadFreshEvents(
+    listName: string,
+    daysAhead: number,
+    newHireDays: number,
+    selectedEventTypes: EventType[]
+  ): Promise<IBirthday[]> {
+    const normalizedEventTypes = this.getNormalizedEventTypes(selectedEventTypes);
+    const requests: Array<Promise<IBirthday[]>> = [];
+
+    if (normalizedEventTypes.includes("birthday")) {
+      requests.push(this.getBirthdays(listName, daysAhead));
+    }
+
+    if (normalizedEventTypes.includes("anniversary")) {
+      requests.push(this.getAnniversaries(daysAhead));
+    }
+
+    if (normalizedEventTypes.includes("newHire")) {
+      requests.push(this.getNewHires(newHireDays));
+    }
+
+    const results = await Promise.all<IDataRequestResult>(
+      requests.map((request) =>
+        request
+          .then((events) => ({ events }))
+          .catch((error) => ({ events: [] as IBirthday[], error }))
+      )
+    );
+    const combinedEvents = results.reduce<IBirthday[]>(
+      (allEvents, result) => allEvents.concat(result.events),
+      []
+    );
+
+    if (combinedEvents.length === 0) {
+      const firstFailure = results.find((result) => result.error !== undefined);
+
+      if (firstFailure?.error) {
+        throw firstFailure.error;
+      }
+    }
+
+    return this.normalizeEvents(combinedEvents, normalizedEventTypes);
+  }
+
+  private refreshCacheInBackground(
+    listName: string,
+    daysAhead: number,
+    newHireDays: number,
+    selectedEventTypes: EventType[],
+    onBackgroundRefresh?: EventRefreshCallback
+  ): void {
+    const normalizedEventTypes = this.getNormalizedEventTypes(selectedEventTypes);
+    const cacheScope = this.getCacheScope(listName, daysAhead, newHireDays, normalizedEventTypes);
+
+    setTimeout(() => {
+      this.loadFreshEvents(listName, daysAhead, newHireDays, normalizedEventTypes)
+        .then((events) => {
+          CacheService.save(cacheScope, events);
+          onBackgroundRefresh?.(events);
+        })
+        .catch((error) => {
+          console.warn("Background refresh failed.", error);
+        });
+    }, BirthdayService.BACKGROUND_REFRESH_DELAY);
+  }
+
   public async getBirthdays(listName: string, daysAhead: number): Promise<IBirthday[]> {
+    const listToUse = listName?.trim() || this.defaultListName;
+    const today = this.getStartOfToday();
+    const endDate = new Date(today);
 
-    const listToUse =
-      listName?.trim() !== "" ? listName : this.defaultListName;
-
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const end = new Date(today); end.setDate(today.getDate() + daysAhead);
+    endDate.setDate(today.getDate() + daysAhead);
 
     const items = await this._sp.web.lists
       .getByTitle(listToUse)
       .items.select("Title", "Birthday", "Email", "JobTitle")();
 
-    const results: IBirthday[] = [];
+    const results = await Promise.all(
+      items.map(async (item) => {
+        if (!item.Birthday) {
+          return undefined;
+        }
 
-    for (const i of items) {
-      if (!i.Birthday) continue;
+        const birthDate = this.parseDate(item.Birthday);
 
-      const birth = new Date(i.Birthday);
+        if (!birthDate) {
+          return undefined;
+        }
 
-      let next = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-      if (next < today) next.setFullYear(next.getFullYear() + 1);
+        const nextEventDate = this.getNextOccurrence(birthDate);
 
-      if (next <= end) {
-        const photo = await this.getPhoto(i.Email);
+        if (nextEventDate > endDate) {
+          return undefined;
+        }
 
-        results.push({
-          Title: i.Title,
-          Email: i.Email,
-          JobTitle: i.JobTitle,
-          Birthday: i.Birthday,
+        const photo = item.Email
+          ? await this.getPhoto(item.Email)
+          : undefined;
+
+        return this.hydrateEvent({
+          Title: item.Title,
+          Email: item.Email,
+          JobTitle: item.JobTitle,
+          Birthday: item.Birthday,
           PhotoUrl: photo,
           IsAnniversary: false,
-          NextEventDate: next,
-          IsToday:
-            next.getDate() === today.getDate() &&
-            next.getMonth() === today.getMonth()
+          IsNewHire: false,
+          NextEventDate: nextEventDate
         });
-      }
-    }
+      })
+    );
 
-    return results;
+    return results.filter((event): event is IBirthday => event !== undefined);
   }
 
-  // ----------------------------------------------------
-  // GET ANNIVERSARIES FROM GRAPH API
-  // ----------------------------------------------------
   public async getAnniversaries(daysAhead: number): Promise<IBirthday[]> {
+    const today = this.getStartOfToday();
+    const endDate = new Date(today);
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const end = new Date(today); end.setDate(today.getDate() + daysAhead);
+    endDate.setDate(today.getDate() + daysAhead);
 
-    // Load AD Users
     const users = await this._graph.users
-      .select("displayName", "mail", "jobTitle", "employeeHireDate")
+      .select("displayName", "mail", "userPrincipalName", "jobTitle", "employeeHireDate")
       .top(999)();
 
-    const results: IBirthday[] = [];
+    const results = await Promise.all(
+      users.map(async (user) => {
+        if (!user.employeeHireDate) {
+          return undefined;
+        }
 
-    for (const u of users) {
-      if (!u.mail) continue;
+        const hireDate = this.parseDate(user.employeeHireDate);
+        const email = this.getGraphEmail(user.mail, user.userPrincipalName);
 
-      let hire = u.employeeHireDate
-        ? new Date(u.employeeHireDate)
-        : new Date(2015, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+        if (!hireDate || !email) {
+          return undefined;
+        }
 
-      let nextAnniv = new Date(today.getFullYear(), hire.getMonth(), hire.getDate());
-      if (nextAnniv < today) nextAnniv.setFullYear(nextAnniv.getFullYear() + 1);
+        const nextAnniversary = this.getNextOccurrence(hireDate);
 
-      if (nextAnniv > end) continue;
+        if (nextAnniversary < today || nextAnniversary > endDate) {
+          return undefined;
+        }
 
-      const yearsCompleted = nextAnniv.getFullYear() - hire.getFullYear();
-      const photo = await this.getPhoto(u.mail);
+        const photo = await this.getPhoto(email);
 
-      results.push({
-        Title: u.displayName ?? "Unknown User",
-        Email: u.mail ?? "",
-        JobTitle: u.jobTitle ?? "",
-        HireDate: hire.toISOString(),
-        YearsCompleted: yearsCompleted,
-        PhotoUrl: photo,
-        IsAnniversary: true,
-        NextEventDate: nextAnniv,
-        IsToday:
-          nextAnniv.getDate() === today.getDate() &&
-          nextAnniv.getMonth() === today.getMonth()
-      });
-    }
+        return this.hydrateEvent({
+          Title: user.displayName ?? "Unknown User",
+          Email: email,
+          JobTitle: user.jobTitle ?? "",
+          HireDate: hireDate.toISOString(),
+          PhotoUrl: photo,
+          IsAnniversary: true,
+          IsNewHire: false,
+          NextEventDate: nextAnniversary
+        });
+      })
+    );
 
-    return results;
+    return results.filter((event): event is IBirthday => event !== undefined);
   }
 
-  // ----------------------------------------------------
-  // GET USER PHOTO (Graph → Base64 → Cached)
-  // ----------------------------------------------------
-  private async getPhoto(email: string): Promise<string> {
+  public async getNewHires(newHireDays: number): Promise<IBirthday[]> {
+    const today = this.getStartOfToday();
+    const startDate = new Date(today);
+
+    startDate.setDate(today.getDate() - newHireDays);
+
+    const users = await this._graph.users
+      .select("displayName", "mail", "userPrincipalName", "jobTitle", "employeeHireDate")
+      .top(999)();
+
+    const results = await Promise.all(
+      users.map(async (user) => {
+        if (!user.employeeHireDate) {
+          return undefined;
+        }
+
+        const hireDate = this.parseDate(user.employeeHireDate);
+        const email = this.getGraphEmail(user.mail, user.userPrincipalName);
+
+        if (!hireDate || !email || hireDate < startDate || hireDate > today) {
+          return undefined;
+        }
+
+        const photo = await this.getPhoto(email);
+
+        return this.hydrateEvent({
+          Title: user.displayName ?? "Unknown User",
+          Email: email,
+          JobTitle: user.jobTitle ?? "",
+          HireDate: hireDate.toISOString(),
+          PhotoUrl: photo,
+          IsAnniversary: false,
+          IsNewHire: true,
+          NextEventDate: hireDate
+        });
+      })
+    );
+
+    return results.filter((event): event is IBirthday => event !== undefined);
+  }
+
+  private async getPhoto(email: string): Promise<string | undefined> {
     try {
       const blob = await this._graph.users.getById(email).photo.getBlob();
       return await this.blobToBase64(blob);
     } catch {
-      return placeholderImage;
+      return undefined;
     }
   }
 
   private blobToBase64(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onloadend = () => resolve(r.result as string);
-      r.onerror = reject;
-      r.readAsDataURL(blob);
+      const reader = new FileReader();
+
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
   }
 }

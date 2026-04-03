@@ -5,33 +5,255 @@
 ---------------------------------------------------- */
 .host {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.webPartShell {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 10px 32px rgba(17, 57, 120, 0.12);
+}
+
+.shellPattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.webPartHeader {
+  position: relative;
+  z-index: 1;
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 20px 8px;
+}
+
+.heroSection {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(220px, 0.95fr);
+  gap: 18px;
+  align-items: stretch;
+  margin: 0 20px 18px;
+  max-width: calc(100% - 40px);
+  box-sizing: border-box;
+  padding: 18px 22px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.58));
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 12px 28px rgba(27, 58, 105, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.heroSection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.88), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(92, 108, 255, 0.08), transparent 38%);
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
+  gap: 8px;
+}
+
+.heroEyebrow {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(29, 79, 168, 0.1);
+  color: #1d4fa8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.webPartTitle {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #123b7a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.webPartSubtitle {
+  max-width: 640px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4b617f;
+}
+
+.heroHighlight {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: rgba(18, 59, 122, 0.08);
+  color: #1d3f78;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.refreshButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 2;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d4fa8, #365ecf);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: 0 12px 24px rgba(29, 79, 168, 0.22);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.refreshButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(29, 79, 168, 0.28);
+}
+
+.refreshButton:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.refreshIcon {
+  font-size: 14px;
+}
+
+.refreshIconSpinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.heroStats {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-self: stretch;
+}
+
+.heroStatCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 88px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+
+.heroStatValue {
+  width: 100%;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: #123b7a;
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.heroStatLabel {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5d7190;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 /* ----------------------------------------------------
    HORIZONTAL SCROLL ROW
 ---------------------------------------------------- */
 .scrollRow {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: row;
   gap: 25px;
-  padding: 20px;
+  padding: 12px 20px 12px;
   overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
-
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(29, 79, 168, 0.55) rgba(255, 255, 255, 0.45);
+  cursor: grab;
 }
 .scrollRow::-webkit-scrollbar {
-  display: none;
+  height: 10px;
+}
+.scrollRow::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.52);
+  border-radius: 999px;
+}
+.scrollRow::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(29, 79, 168, 0.72), rgba(91, 95, 199, 0.72));
+  border-radius: 999px;
+}
+.scrollRow::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, rgba(18, 59, 122, 0.9), rgba(91, 95, 199, 0.9));
+}
+.scrollRow:active {
+  cursor: grabbing;
 }
 
 /* ----------------------------------------------------
    CARD DESIGN (PORTRAIT)
 ---------------------------------------------------- */
 .cardContainer {
-  width: 240px;
-  min-height: 340px;
+  position: relative;
+  width: 248px;
+  min-height: 364px;
   padding: 22px;
   border-radius: 22px;
 
@@ -41,21 +263,39 @@
   flex-direction: column;
   justify-content: space-between;
 
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-
-  background-color: rgba(255,255,255,0.90);
-  box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 24px rgba(15, 40, 82, 0.16);
+  backdrop-filter: blur(10px);
   text-align: center;
 
   overflow: hidden;
+}
+
+.cardBirthday {
+  border-top: 4px solid rgba(230, 57, 70, 0.85);
+}
+
+.cardAnniversary {
+  border-top: 4px solid rgba(196, 155, 0, 0.82);
+}
+
+.cardNewHire {
+  border-top: 4px solid rgba(31, 157, 106, 0.82);
+}
+
+.cardBackdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 /* ----------------------------------------------------
    INTERNAL CONTENT ZONE
 ---------------------------------------------------- */
 .cardContent {
+  position: relative;
+  z-index: 1;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -63,20 +303,39 @@
   padding-bottom: 20px;    /* Extra spacing before footer */
 }
 
-/* HEADER */
-.headerText {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1d4fa8;
-  margin-bottom: 15px;
+.typeBadge {
+  display: inline-flex;
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
 }
 
-.title {
-  font-size: 28px;
+.typeBadgeBirthday {
+  background: rgba(230, 57, 70, 0.1);
+  color: #cc3042;
+}
+
+.typeBadgeAnniversary {
+  background: rgba(196, 155, 0, 0.12);
+  color: #9e7a00;
+}
+
+.typeBadgeNewHire {
+  background: rgba(31, 157, 106, 0.12);
+  color: #147550;
+}
+
+/* HEADER */
+.headerText {
+  font-size: 21px;
   font-weight: 700;
   color: #1d4fa8;
-  margin-bottom: 20px;
-  margin-left: 10px;     /* optional */
+  margin-bottom: 14px;
 }
 
 /* PROFILE IMAGE */
@@ -91,7 +350,23 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 20px rgba(27, 58, 105, 0.22);
+  border: 4px solid rgba(255, 255, 255, 0.72);
+}
+
+.profileFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1d4fa8;
+  box-shadow: 0 10px 20px rgba(27, 58, 105, 0.18);
+  border: 4px solid rgba(255, 255, 255, 0.72);
 }
 
 /* NAME */
@@ -112,21 +387,29 @@
   font-size: 17px;
   font-weight: 600;
   color: #1d4fa8;
-  margin: 12px 0 14px;
+  margin: 12px 0 10px;
 }
 
-/* YEARS COMPLETED — WORKIVERSARY */
-.yearsCompleted {
+.supportingMetric {
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 22px;
+}
+
+.anniversaryMetric {
   color: #b8860b;  /* Gold */
+}
+
+.newHireMetric {
+  color: #157653;
 }
 
 /* ----------------------------------------------------
    FOOTER BUTTONS (BOTTOM FIXED SPACING)
 ---------------------------------------------------- */
 .footerBar {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   padding: 0 25px;
@@ -142,6 +425,14 @@
 
 .iconBtn:hover {
   transform: scale(1.2);
+}
+
+.iconBtnDisabled {
+  cursor: not-allowed;
+}
+
+.iconBtnDisabled:hover {
+  transform: none;
 }
 
 /* ----------------------------------------------------
@@ -170,7 +461,8 @@
   font-size: 18px;
   color: #888;
   text-align: center;
-  margin-top: 30px;
+  margin: 20px auto;
+  white-space: normal;
 }
 
 /* ------------------------------------------------------
@@ -201,6 +493,14 @@
   height: 22px;
   margin: 10px auto 25px auto;
   border-radius: 4px;
+}
+
+.shimmerBadge {
+  @extend .shimmer;
+  width: 34%;
+  height: 24px;
+  margin: 0 auto 16px;
+  border-radius: 999px;
 }
 
 /* Round profile image placeholder */
@@ -234,4 +534,213 @@
   width: 32px;
   height: 32px;
   border-radius: 5px;
+}
+
+.themeCelebration {
+  background:
+    linear-gradient(145deg, #ffffff 0%, #f1f8ff 52%, #f7f2ff 100%);
+
+  .shellPattern {
+    background:
+      radial-gradient(circle at 11% 18%, rgba(255, 191, 73, 0.26) 0 34px, transparent 35px),
+      radial-gradient(circle at 88% 16%, rgba(85, 214, 255, 0.22) 0 32px, transparent 33px),
+      radial-gradient(circle at 17% 82%, rgba(205, 134, 255, 0.18) 0 36px, transparent 37px),
+      radial-gradient(circle at 82% 84%, rgba(255, 122, 159, 0.16) 0 28px, transparent 29px),
+      linear-gradient(52deg, transparent 0 47%, rgba(84, 174, 255, 0.18) 48% 52%, transparent 53%),
+      linear-gradient(132deg, transparent 0 47%, rgba(255, 190, 92, 0.18) 48% 52%, transparent 53%);
+  }
+
+  .cardBackdrop {
+    background:
+      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.92) 0 34px, transparent 35px),
+      radial-gradient(circle at 84% 14%, rgba(0, 200, 255, 0.12) 0 36px, transparent 37px),
+      radial-gradient(circle at 22% 82%, rgba(199, 155, 255, 0.12) 0 28px, transparent 29px),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(242, 248, 255, 0.84)),
+      linear-gradient(52deg, transparent 0 43%, rgba(88, 183, 255, 0.16) 44% 49%, transparent 50%),
+      linear-gradient(132deg, transparent 0 43%, rgba(255, 198, 92, 0.16) 44% 49%, transparent 50%);
+  }
+
+  .profileFallback {
+    background:
+      radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.3) 34%, transparent 35%),
+      linear-gradient(145deg, #6bd9ff, #6078ff 55%, #915eff);
+  }
+
+  .heroEyebrow,
+  .heroHighlight {
+    background: rgba(96, 120, 255, 0.12);
+  }
+}
+
+.themeSimple {
+  background:
+    linear-gradient(145deg, #ffffff 0%, #f6f8fc 52%, #eef3fb 100%);
+
+  .shellPattern {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(234, 241, 250, 0.52));
+  }
+
+  .cardBackdrop {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(242, 246, 252, 0.84));
+  }
+
+  .profileFallback {
+    background:
+      radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.2) 34%, transparent 35%),
+      linear-gradient(145deg, #c8d7f6, #9fb8f1 55%, #7f9fe2);
+  }
+
+  .heroEyebrow,
+  .heroHighlight {
+    background: rgba(29, 79, 168, 0.08);
+  }
+}
+
+.themeSunrise {
+  background:
+    linear-gradient(145deg, #fffaf3 0%, #fff0f3 45%, #f5f7ff 100%);
+
+  .shellPattern {
+    background:
+      radial-gradient(circle at 15% 16%, rgba(255, 181, 119, 0.28) 0 52px, transparent 53px),
+      radial-gradient(circle at 82% 20%, rgba(255, 120, 151, 0.17) 0 42px, transparent 43px),
+      radial-gradient(circle at 76% 85%, rgba(116, 166, 255, 0.16) 0 46px, transparent 47px),
+      linear-gradient(180deg, transparent 0 55%, rgba(255, 237, 213, 0.78) 56% 100%);
+  }
+
+  .cardBackdrop {
+    background:
+      radial-gradient(circle at 18% 16%, rgba(255, 232, 205, 0.92) 0 38px, transparent 39px),
+      radial-gradient(circle at 84% 18%, rgba(255, 190, 206, 0.3) 0 32px, transparent 33px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 247, 240, 0.84) 56%, rgba(241, 245, 255, 0.82) 100%);
+  }
+
+  .profileFallback {
+    background:
+      radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.22) 34%, transparent 35%),
+      linear-gradient(145deg, #ffbd73, #ff7f97 58%, #7da4ff);
+  }
+
+  .heroEyebrow,
+  .heroHighlight {
+    background: rgba(255, 147, 102, 0.14);
+  }
+}
+
+.themeMeadow {
+  background:
+    linear-gradient(145deg, #f4fffb 0%, #eafbf6 48%, #f2f8ff 100%);
+
+  .shellPattern {
+    background:
+      radial-gradient(circle at 12% 22%, rgba(90, 212, 173, 0.22) 0 40px, transparent 41px),
+      radial-gradient(circle at 88% 18%, rgba(64, 178, 230, 0.16) 0 34px, transparent 35px),
+      radial-gradient(circle at 20% 84%, rgba(113, 196, 142, 0.16) 0 48px, transparent 49px),
+      linear-gradient(135deg, transparent 0 48%, rgba(109, 214, 190, 0.16) 49% 53%, transparent 54%);
+  }
+
+  .cardBackdrop {
+    background:
+      radial-gradient(circle at 16% 18%, rgba(196, 255, 238, 0.72) 0 32px, transparent 33px),
+      radial-gradient(circle at 84% 14%, rgba(140, 225, 255, 0.18) 0 30px, transparent 31px),
+      linear-gradient(165deg, rgba(255, 255, 255, 0.9), rgba(242, 255, 250, 0.84) 58%, rgba(240, 248, 255, 0.82) 100%);
+    border-top: 1px solid rgba(95, 190, 162, 0.2);
+  }
+
+  .profileFallback {
+    background:
+      radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.24) 34%, transparent 35%),
+      linear-gradient(145deg, #4fd0b5, #5fd29b 50%, #67b8f7);
+  }
+
+  .heroEyebrow,
+  .heroHighlight {
+    background: rgba(79, 208, 181, 0.14);
+  }
+}
+
+.themeRoyal {
+  background:
+    linear-gradient(145deg, #f7f9ff 0%, #edf3ff 45%, #f9f5ff 100%);
+
+  .shellPattern {
+    background:
+      radial-gradient(circle at 14% 18%, rgba(62, 99, 255, 0.18) 0 42px, transparent 43px),
+      radial-gradient(circle at 86% 12%, rgba(142, 108, 255, 0.16) 0 38px, transparent 39px),
+      radial-gradient(circle at 82% 84%, rgba(255, 190, 92, 0.16) 0 44px, transparent 45px),
+      linear-gradient(140deg, transparent 0 48%, rgba(95, 122, 255, 0.14) 49% 53%, transparent 54%);
+  }
+
+  .cardBackdrop {
+    background:
+      radial-gradient(circle at 20% 16%, rgba(213, 222, 255, 0.72) 0 34px, transparent 35px),
+      radial-gradient(circle at 84% 16%, rgba(255, 214, 140, 0.2) 0 28px, transparent 29px),
+      linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(243, 246, 255, 0.84) 52%, rgba(248, 243, 255, 0.82) 100%);
+    border-top: 1px solid rgba(88, 113, 255, 0.16);
+  }
+
+  .profileFallback {
+    background:
+      radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.24) 34%, transparent 35%),
+      linear-gradient(145deg, #6f7bff, #5c6cff 55%, #b677ff);
+  }
+
+  .heroEyebrow,
+  .heroHighlight {
+    background: rgba(111, 123, 255, 0.14);
+  }
+}
+
+@media (max-width: 768px) {
+  .webPartShell {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .heroSection {
+    grid-template-columns: 1fr;
+    margin: 0 8px 16px;
+    max-width: calc(100% - 16px);
+    padding: 16px;
+  }
+
+  .webPartTitle {
+    font-size: 24px;
+  }
+
+  .webPartSubtitle {
+    font-size: 14px;
+  }
+
+  .heroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .refreshButton {
+    position: static;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .heroStatCard {
+    min-height: 88px;
+    padding: 14px;
+  }
+
+  .heroStatValue {
+    font-size: 24px;
+  }
+
+  .scrollRow {
+    gap: 18px;
+    padding: 10px 8px 4px;
+  }
+
+  .cardContainer {
+    width: 224px;
+    min-height: 338px;
+  }
 }

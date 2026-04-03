@@ -5,7 +5,7 @@ import {
   PropertyPaneTextField,
   PropertyPaneSlider,
   PropertyPaneChoiceGroup,
-  PropertyPaneDropdown
+  PropertyPaneCheckbox
 } from "@microsoft/sp-property-pane";
 
 import { BaseClientSideWebPart } from "@microsoft/sp-webpart-base";
@@ -18,19 +18,16 @@ import { IEmpBirthdayWebPartProps } from "./IEmpBirthdayWebPartProps";
 
 import { spfi, SPFx } from "@pnp/sp";
 import { graphfi, SPFx as GraphSPFx } from "@pnp/graph";
-
-// Background Images
-import img1 from "./assets/bg/Image-1.png";
-import img2 from "./assets/bg/Image-2.png";
-import img3 from "./assets/bg/Image-3.png";
-import img4 from "./assets/bg/Image-4.png";
+import { BackgroundVariant, resolveBackgroundVariant } from "./helpers/VisualHelper";
+import {
+  areAllEventTypesSelected,
+  getSelectedEventTypes
+} from "./helpers/EventSelectionHelper";
 
 export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthdayWebPartProps> {
   
   private _sp = spfi();
   private _graph = graphfi();
-
-  private bgImages = [img1, img2, img3, img4];
 
   public async onInit(): Promise<void> {
     await super.onInit();
@@ -42,26 +39,64 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
     // Default property values if not set
     if (!this.properties.listName) this.properties.listName = "EmployeeBirthdays";
     if (!this.properties.daysAhead) this.properties.daysAhead = 15;
+    if (!this.properties.newHireDays) this.properties.newHireDays = 30;
     if (!this.properties.eventFilter) this.properties.eventFilter = "both";
+    this.initializeEventSelectionProperties();
+    if (!this.properties.backgroundVariant) {
+      this.properties.backgroundVariant = resolveBackgroundVariant(
+        undefined,
+        this.properties.backgroundImage
+      );
+    }
   }
 
-  private getBackgroundOptions() {
-    return this.bgImages.map((image, index) => ({
-      key: image,
-      text: "",
-      imageSrc: image,
-      selectedImageSrc: image,
-      imageSize: { width: 80, height: 80 }
-    }));
+  private getBackgroundOptions(): Array<{
+    key: BackgroundVariant;
+    text: string;
+  }> {
+    return [
+      { key: "simple", text: "Simple" },
+      { key: "celebration", text: "Celebration" },
+      { key: "sunrise", text: "Sunrise" },
+      { key: "meadow", text: "Meadow" },
+      { key: "royal", text: "Royal" }
+    ];
+  }
+
+  private initializeEventSelectionProperties(): void {
+    const selectedEventTypes = getSelectedEventTypes(this.properties);
+
+    if (this.properties.showAllCards === undefined) {
+      this.properties.showAllCards = areAllEventTypesSelected(selectedEventTypes);
+    }
+
+    if (this.properties.showBirthdays === undefined) {
+      this.properties.showBirthdays = selectedEventTypes.includes("birthday");
+    }
+
+    if (this.properties.showAnniversaries === undefined) {
+      this.properties.showAnniversaries = selectedEventTypes.includes("anniversary");
+    }
+
+    if (this.properties.showNewHires === undefined) {
+      this.properties.showNewHires = selectedEventTypes.includes("newHire");
+    }
   }
 
   public render(): void {
+    const selectedEventTypes = getSelectedEventTypes(this.properties);
+
     const element = React.createElement(EmpBirthday, {
       description: this.properties.description,
+      heroEyebrowText: this.properties.heroEyebrowText,
+      heroSubtitleText: this.properties.heroSubtitleText,
+      heroHighlightText: this.properties.heroHighlightText,
       listName: this.properties.listName,
       daysAhead: this.properties.daysAhead,
+      newHireDays: this.properties.newHireDays,
+      backgroundVariant: this.properties.backgroundVariant,
       backgroundImage: this.properties.backgroundImage,
-      eventFilter: this.properties.eventFilter,
+      selectedEventTypes: selectedEventTypes,
 
       // PnP
       sp: this._sp,
@@ -79,6 +114,47 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
     return Version.parse("1.0");
   }
 
+  protected onPropertyPaneFieldChanged(
+    propertyPath: string,
+    oldValue: unknown,
+    newValue: unknown
+  ): void {
+    super.onPropertyPaneFieldChanged(propertyPath, oldValue, newValue);
+
+    if (
+      propertyPath !== "showAllCards" &&
+      propertyPath !== "showBirthdays" &&
+      propertyPath !== "showAnniversaries" &&
+      propertyPath !== "showNewHires"
+    ) {
+      return;
+    }
+
+    if (propertyPath === "showAllCards" && Boolean(newValue)) {
+      this.properties.showBirthdays = true;
+      this.properties.showAnniversaries = true;
+      this.properties.showNewHires = true;
+    }
+
+    const hasAnySelectedType = Boolean(this.properties.showBirthdays) ||
+      Boolean(this.properties.showAnniversaries) ||
+      Boolean(this.properties.showNewHires);
+
+    if (!hasAnySelectedType) {
+      this.properties.showAllCards = true;
+      this.properties.showBirthdays = true;
+      this.properties.showAnniversaries = true;
+      this.properties.showNewHires = true;
+    } else {
+      this.properties.showAllCards = Boolean(this.properties.showBirthdays) &&
+        Boolean(this.properties.showAnniversaries) &&
+        Boolean(this.properties.showNewHires);
+    }
+
+    this.context.propertyPane.refresh();
+    this.render();
+  }
+
   // ----------------------------------------------------
   // PROPERTY PANE
   // ----------------------------------------------------
@@ -86,7 +162,7 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
     return {
       pages: [
         {
-          header: { description: "Birthday & Workiversary Webpart Settings" },
+          header: { description: "Celebrations & New Hires Web Part Settings" },
           groups: [
             {
               groupFields: [
@@ -95,28 +171,58 @@ export default class EmpBirthdayWebPart extends BaseClientSideWebPart<IEmpBirthd
                   label: "Webpart Title"
                 }),
 
+                PropertyPaneTextField("heroEyebrowText", {
+                  label: "Hero Label"
+                }),
+
+                PropertyPaneTextField("heroSubtitleText", {
+                  label: "Hero Description",
+                  multiline: true
+                }),
+
+                PropertyPaneTextField("heroHighlightText", {
+                  label: "Hero Highlight Text",
+                  description: "Leave blank to show the next upcoming event automatically."
+                }),
+
                 PropertyPaneTextField("listName", {
                   label: "SharePoint List Name"
                 }),
 
                 PropertyPaneSlider("daysAhead", {
-                  label: "Days to look ahead",
+                  label: "Upcoming range (days)",
                   min: 1,
-                  max: 60
+                  max: 90
                 }),
 
-                PropertyPaneChoiceGroup("backgroundImage", {
-                  label: "Choose Card Background Image",
+                PropertyPaneSlider("newHireDays", {
+                  label: "New hire lookback (days)",
+                  min: 1,
+                  max: 180
+                }),
+
+                PropertyPaneChoiceGroup("backgroundVariant", {
+                  label: "Choose Background Style",
                   options: this.getBackgroundOptions()
                 }),
 
-                PropertyPaneDropdown("eventFilter", {
-                  label: "Show Events",
-                  options: [
-                    { key: "both", text: "Birthdays & Anniversaries" },
-                    { key: "birthday", text: "Birthdays Only" },
-                    { key: "anniversary", text: "Anniversaries Only" }
-                  ]
+                PropertyPaneCheckbox("showAllCards", {
+                  text: "All"
+                }),
+
+                PropertyPaneCheckbox("showBirthdays", {
+                  text: "Birthdays",
+                  disabled: this.properties.showAllCards
+                }),
+
+                PropertyPaneCheckbox("showAnniversaries", {
+                  text: "Anniversaries",
+                  disabled: this.properties.showAllCards
+                }),
+
+                PropertyPaneCheckbox("showNewHires", {
+                  text: "New Hires",
+                  disabled: this.properties.showAllCards
                 })
 
               ]

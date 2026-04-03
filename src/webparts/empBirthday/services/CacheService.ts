@@ -1,28 +1,68 @@
+interface ICacheRecord<T> {
+  timestamp: number;
+  data: T;
+}
+
 export default class CacheService {
 
-  private static CACHE_KEY = "BIRTHDAY_CACHE_v1";
-  private static REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+  private static readonly CACHE_PREFIX = "BIRTHDAY_CACHE_v4";
+  private static readonly REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
 
-  /** Save data to sessionStorage safely */
-  public static save(data: any): void {
+  private static getStorage(): Storage | undefined {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    try {
+      return window.localStorage;
+    } catch (localStorageError) {
+      console.warn("CacheService: localStorage unavailable, trying sessionStorage.", localStorageError);
+    }
+
+    try {
+      return window.sessionStorage;
+    } catch (sessionStorageError) {
+      console.warn("CacheService: sessionStorage unavailable.", sessionStorageError);
+      return undefined;
+    }
+  }
+
+  private static getCacheKey(scope: string): string {
+    return `${this.CACHE_PREFIX}:${scope}`;
+  }
+
+  /** Save data to browser storage safely */
+  public static save<T>(scope: string, data: T): void {
+    const storage = this.getStorage();
+
+    if (!storage) {
+      return;
+    }
+
     try {
       const record = {
         timestamp: Date.now(),
         data
       };
 
-      sessionStorage.setItem(this.CACHE_KEY, JSON.stringify(record));
+      storage.setItem(this.getCacheKey(scope), JSON.stringify(record));
     } catch (e) {
       console.warn("CacheService.save: Storage exceeded or blocked → clearing cache.", e);
-      sessionStorage.removeItem(this.CACHE_KEY);
+      this.clear(scope);
     }
   }
 
   /** Load cached data (if exists & valid) */
-  public static load(): { timestamp: number; data: any } | null {
+  public static load<T>(scope: string): ICacheRecord<T> | undefined {
+    const storage = this.getStorage();
+
+    if (!storage) {
+      return undefined;
+    }
+
     try {
-      const raw = sessionStorage.getItem(this.CACHE_KEY);
-      if (!raw) return null;
+      const raw = storage.getItem(this.getCacheKey(scope));
+      if (!raw) return undefined;
 
       const record = JSON.parse(raw);
 
@@ -33,27 +73,37 @@ export default class CacheService {
         record.data === undefined
       ) {
         console.warn("CacheService.load: Invalid cache structure. Clearing...");
-        this.clear();
-        return null;
+        this.clear(scope);
+        return undefined;
       }
 
-      return record;
+      return record as ICacheRecord<T>;
     } catch (e) {
       console.warn("CacheService.load: Failed to parse cache → clearing.", e);
-      this.clear();
-      return null;
+      this.clear(scope);
+      return undefined;
     }
   }
 
   /** Check whether cached timestamp is expired */
   public static isExpired(timestamp: number): boolean {
-    return Date.now() - timestamp > this.REFRESH_INTERVAL;
+    return Date.now() - timestamp >= this.REFRESH_INTERVAL;
+  }
+
+  public static getRefreshInterval(): number {
+    return this.REFRESH_INTERVAL;
   }
 
   /** Clear cache safely */
-  public static clear(): void {
+  public static clear(scope: string): void {
+    const storage = this.getStorage();
+
+    if (!storage) {
+      return;
+    }
+
     try {
-      sessionStorage.removeItem(this.CACHE_KEY);
+      storage.removeItem(this.getCacheKey(scope));
     } catch (e) {
       console.warn("CacheService.clear: Unable to clear cache.", e);
     }

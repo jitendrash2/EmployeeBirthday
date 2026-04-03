@@ -1,14 +1,17 @@
 export interface IBirthday {
-  Title: string | null;
-  Birthday?: string | null;
-  HireDate?: string | null;
+  Title?: string;
+  Birthday?: string;
+  HireDate?: string;
 
   NextEventDate?: Date;
+  DaysUntilEvent?: number;
+  DaysSinceHire?: number;
   YearsCompleted?: number;
   IsAnniversary?: boolean;
+  IsNewHire?: boolean;
   IsToday?: boolean;
 
-  Email: string | null;
-  JobTitle?: string | null;
+  Email?: string;
+  JobTitle?: string;
   PhotoUrl?: string;
 }

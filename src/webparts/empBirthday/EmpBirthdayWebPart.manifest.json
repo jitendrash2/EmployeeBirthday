@@ -24,9 +24,18 @@
 
       "properties": {
         "description": "Employee Birthdays",
+        "heroEyebrowText": "Birthdays & Workiversaries",
+        "heroSubtitleText": "Celebrate upcoming birthdays and work anniversaries across the organization.",
+        "heroHighlightText": "",
         "listName": "EmployeeBirthdays",
         "daysAhead": 15,
-        "backgroundImage": ""
+        "newHireDays": 30,
+        "backgroundVariant": "simple",
+        "eventFilter": "both",
+        "showAllCards": true,
+        "showBirthdays": true,
+        "showAnniversaries": true,
+        "showNewHires": true
       }
     }
   ]
